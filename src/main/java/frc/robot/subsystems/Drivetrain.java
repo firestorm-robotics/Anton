@@ -10,8 +10,11 @@ package frc.robot.subsystems;
 import com.revrobotics.CANPIDController;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.ControlType;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.first.wpilibj.DriverStation.MatchType;
 import edu.wpi.first.wpilibj.command.Subsystem;
+import frc.robot.RobotMap;
 import frc.robot.Utils.Constants;
 
 /**
@@ -21,16 +24,16 @@ public class Drivetrain extends Subsystem {
   // Put methods for controlling this subsystem
   // here. Call these from Commands.
 
-  private CANSparkMax mMasterLeft;
-  private CANSparkMax mLeftSlaveA;
-  private CANSparkMax mLeftSlaveB;
-  private CANSparkMax mMasterRight;
-  private CANSparkMax mRightSlaveA;
-  private CANSparkMax mRightSlaveB;
+  private CANSparkMax mMasterLeft  = new CANSparkMax(RobotMap.leftMaster, MotorType.kBrushless);
+  private CANSparkMax mLeftSlaveA  = new CANSparkMax(RobotMap.leftSlaveA, MotorType.kBrushless);
+  private CANSparkMax mLeftSlaveB  = new CANSparkMax(RobotMap.leftSlaveB, MotorType.kBrushless);
+  private CANSparkMax mMasterRight = new CANSparkMax(RobotMap.rightMaster,MotorType.kBrushless);
+  private CANSparkMax mRightSlaveA = new CANSparkMax(RobotMap.rightSlaveA,MotorType.kBrushless);
+  private CANSparkMax mRightSlaveB = new CANSparkMax(RobotMap.rightSlaveB, MotorType.kBrushless);
 
 
-  private CANPIDController mPIDLeft;
-  private CANPIDController mPIDRight;
+  private CANPIDController mPIDLeft  = new CANPIDController(mMasterLeft);
+  private CANPIDController mPIDRight = new CANPIDController(mMasterRight);
 
   private static Drivetrain instance;
 

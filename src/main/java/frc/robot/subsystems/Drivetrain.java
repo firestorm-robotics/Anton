@@ -26,10 +26,9 @@ public class Drivetrain extends Subsystem {
 
   private CANSparkMax mMasterLeft  = new CANSparkMax(RobotMap.leftMaster, MotorType.kBrushless);
   private CANSparkMax mLeftSlaveA  = new CANSparkMax(RobotMap.leftSlaveA, MotorType.kBrushless);
-  private CANSparkMax mLeftSlaveB  = new CANSparkMax(RobotMap.leftSlaveB, MotorType.kBrushless);
   private CANSparkMax mMasterRight = new CANSparkMax(RobotMap.rightMaster,MotorType.kBrushless);
   private CANSparkMax mRightSlaveA = new CANSparkMax(RobotMap.rightSlaveA,MotorType.kBrushless);
-  private CANSparkMax mRightSlaveB = new CANSparkMax(RobotMap.rightSlaveB, MotorType.kBrushless);
+
 
 
   private CANPIDController mPIDLeft  = new CANPIDController(mMasterLeft);
@@ -40,13 +39,10 @@ public class Drivetrain extends Subsystem {
   private Drivetrain()
   {
     mLeftSlaveA.follow(mMasterLeft);
-    mLeftSlaveB.follow(mMasterLeft);
     mRightSlaveA.follow(mMasterRight);
-    mRightSlaveB.follow(mMasterRight);
 
     mMasterRight.setInverted(true);
     mRightSlaveA.setInverted(true);
-    mRightSlaveB.setInverted(true);
   }
 
  /**

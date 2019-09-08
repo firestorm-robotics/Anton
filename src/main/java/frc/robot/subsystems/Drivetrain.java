@@ -28,6 +28,8 @@ public class Drivetrain extends Subsystem {
   private CANSparkMax mLeftSlaveA  = new CANSparkMax(RobotMap.leftSlaveA, MotorType.kBrushless);
   private CANSparkMax mMasterRight = new CANSparkMax(RobotMap.rightMaster,MotorType.kBrushless);
   private CANSparkMax mRightSlaveA = new CANSparkMax(RobotMap.rightSlaveA,MotorType.kBrushless);
+  private double m_quickStopAccumulator = 0;
+  private double m_quickStopAlpha = 0.1;
 
 
 
@@ -67,6 +69,65 @@ public class Drivetrain extends Subsystem {
 
     mPIDLeft.setReference(powerLeft, ControlType.kDutyCycle);
     mPIDRight.setReference(powerRight, ControlType.kDutyCycle);
+  }
+
+  public void curvatureDrive(double xSpeed, double y, boolean isQuickTurn)
+  {
+    boolean overPower = false;
+    double throttle;
+    double angularPow;
+    xSpeed = Constants.applyDeadband(xSpeed, Constants.kDriveDeadBand);
+    y = Constants.applyDeadband(y, Constants.kDriveDeadBand);
+
+    if(isQuickTurn)
+    {
+       if(Math.abs(xSpeed) < 0.2)
+       {
+        m_quickStopAccumulator = (1 - m_quickStopAlpha)*m_quickStopAccumulator + m_quickStopAlpha * Constants.clamp(y, -1.0, 1.0)*2;
+       }
+       overPower = true;
+       angularPow = y;
+    }else
+    {
+      overPower = false;
+      angularPow = Math.abs(xSpeed) * y - m_quickStopAccumulator;
+
+      if(m_quickStopAccumulator > 1)
+      {
+        m_quickStopAccumulator -= 1;
+      }else if(m_quickStopAccumulator < -1)
+      {
+        m_quickStopAccumulator += 1;
+      }else
+      {
+        m_quickStopAccumulator = 0.0;
+      }
+
+      
+    }
+
+    double leftPow = xSpeed + angularPow;
+    double rightPow = xSpeed - angularPow;
+
+    if (overPower) {
+      if (leftPow > 1.0) {
+        rightPow -= leftPow - 1.0;
+        leftPow = 1.0;
+      } else if (rightPow > 1.0) {
+        leftPow -= rightPow - 1.0;
+        rightPow = 1.0;
+      } else if (leftPow < -1.0) {
+        rightPow -= leftPow + 1.0;
+        leftPow = -1.0;
+      } else if (rightPow < -1.0) {
+        leftPow -= rightPow + 1.0;
+        rightPow = -1.0;
+      }
+
+    mPIDLeft.setReference(leftPow, ControlType.kDutyCycle);
+    mPIDRight.setReference(rightPow, ControlType.kDutyCycle);
+  }
+
   }
   @Override
   public void initDefaultCommand() {

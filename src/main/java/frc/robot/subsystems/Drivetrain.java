@@ -33,7 +33,7 @@ public class Drivetrain extends Subsystem {
 
   private CANPIDController mPIDLeft  = new CANPIDController(mMasterLeft);
   private CANPIDController mPIDRight = new CANPIDController(mMasterRight);
-
+  public double kP,kD,kI;
   private static Drivetrain instance;
 
   private Drivetrain()
@@ -43,6 +43,12 @@ public class Drivetrain extends Subsystem {
 
     mMasterRight.setInverted(true);
     mRightSlaveA.setInverted(true);
+    kP = 10;
+    kI = 0;
+    kD = 0;
+    mPIDLeft.setP(kP);
+    mPIDLeft.setI(kI);
+    mPIDLeft.setD(kD);
   }
 
  /**
@@ -73,4 +79,10 @@ public class Drivetrain extends Subsystem {
     // Set the default command for a subsystem here.
     // setDefaultCommand(new MySpecialCommand());
   }
+  public void testAutonomous () {
+    mPIDLeft.setReference(10, ControlType.kPosition);
+    mPIDRight.setReference(10, ControlType.kPosition);
+  }
+
+  
 }

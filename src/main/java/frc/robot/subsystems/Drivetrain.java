@@ -7,6 +7,7 @@
 
 package frc.robot.subsystems;
 
+import com.revrobotics.CANEncoder;
 import com.revrobotics.CANPIDController;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.ControlType;
@@ -16,6 +17,7 @@ import edu.wpi.first.wpilibj.DriverStation.MatchType;
 import edu.wpi.first.wpilibj.command.Subsystem;
 import frc.robot.RobotMap;
 import frc.robot.Utils.Constants;
+import frc.robot.commands.CartesianDrive;
 
 /**
  * Add your docs here.
@@ -28,6 +30,10 @@ public class Drivetrain extends Subsystem {
   private CANSparkMax mLeftSlaveA  = new CANSparkMax(RobotMap.leftSlaveA, MotorType.kBrushless);
   private CANSparkMax mMasterRight = new CANSparkMax(RobotMap.rightMaster,MotorType.kBrushless);
   private CANSparkMax mRightSlaveA = new CANSparkMax(RobotMap.rightSlaveA,MotorType.kBrushless);
+  private final double HIGH_GEAR_RATIO = 9.74;
+  private  final double WHEEL_RADIUS = 3;
+  private final double WHEEL_CIRCUMFERENCE = Math.PI*(2*WHEEL_RADIUS);
+  private  final double INCHES_PER_REV = WHEEL_CIRCUMFERENCE/HIGH_GEAR_RATIO;
   private double m_quickStopAccumulator = 0;
   private double m_quickStopAlpha = 0.1;
 
@@ -35,6 +41,8 @@ public class Drivetrain extends Subsystem {
 
   private CANPIDController mPIDLeft  = new CANPIDController(mMasterLeft);
   private CANPIDController mPIDRight = new CANPIDController(mMasterRight);
+  private CANEncoder mEncoderLeft = new CANEncoder(mMasterLeft);
+  private CANEncoder mEncoderRight = new CANEncoder(mMasterRight);
   public double kP,kD,kI;
   private static Drivetrain instance;
 
@@ -45,12 +53,15 @@ public class Drivetrain extends Subsystem {
 
     mMasterRight.setInverted(true);
     mRightSlaveA.setInverted(true);
-    kP = 10;
-    kI = 0;
-    kD = 0;
+    kP = 0.07;
+    kI = 0.0;
+    kD = 0.05;
     mPIDLeft.setP(kP);
+    mPIDRight.setP(kP);
     mPIDLeft.setI(kI);
+    mPIDRight.setI(kI);
     mPIDLeft.setD(kD);
+    mPIDRight.setD(kD);
   }
 
  /**
@@ -73,8 +84,10 @@ public class Drivetrain extends Subsystem {
     double powerLeft  = tempY - tempX;
     double powerRight = tempY + tempX;
 
-    mPIDLeft.setReference(powerLeft, ControlType.kDutyCycle);
-    mPIDRight.setReference(powerRight, ControlType.kDutyCycle);
+    System.out.println("X:" + powerLeft);
+    System.out.println("Y:" + y);
+    mPIDLeft.setReference(tempY, ControlType.kDutyCycle);
+    mPIDRight.setReference(tempY, ControlType.kDutyCycle);
   }
 
   public void curvatureDrive(double xSpeed, double y, boolean isQuickTurn)
@@ -139,10 +152,16 @@ public class Drivetrain extends Subsystem {
   public void initDefaultCommand() {
     // Set the default command for a subsystem here.
     // setDefaultCommand(new MySpecialCommand());
+    setDefaultCommand(new CartesianDrive());
+  }
+  public void resetEncoders()
+  {
+    mEncoderLeft.setPosition(0);
+    mEncoderRight.setPosition(0);
   }
   public void testAutonomous () {
-    mPIDLeft.setReference(10, ControlType.kPosition);
-    mPIDRight.setReference(10, ControlType.kPosition);
+    mPIDLeft.setReference(-24/INCHES_PER_REV, ControlType.kPosition);
+    mPIDRight.setReference(-24/INCHES_PER_REV, ControlType.kPosition);
   }
 
   

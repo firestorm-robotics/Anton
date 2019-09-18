@@ -11,8 +11,8 @@ import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.command.Command;
 import frc.robot.Robot;
 
-public class CartesianDrive extends Command {
-  public CartesianDrive() {
+public class curvatureDriveCommand extends Command {
+  public curvatureDriveCommand() {
     // Use requires() here to declare subsystem dependencies
     // eg. requires(chassis);
     requires(Robot.mDrivetrain);
@@ -26,7 +26,7 @@ public class CartesianDrive extends Command {
   // Called repeatedly when this Command is scheduled to run
   @Override
   protected void execute() {
-    Robot.mDrivetrain.cartesianDrive(Robot.m_oi.getController().getY(Hand.kLeft),Robot.m_oi.getController().getX(Hand.kRight));
+    Robot.mDrivetrain.curvatureDrive(Robot.m_oi.getController().getY(Hand.kLeft), Robot.m_oi.getController().getX(Hand.kRight), Robot.m_oi.getController().getBumper(Hand.kLeft));
   }
 
   // Make this return true when this Command no longer needs to run execute()

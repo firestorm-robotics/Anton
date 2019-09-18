@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.command.Subsystem;
 import frc.robot.RobotMap;
 import frc.robot.Utils.Constants;
 import frc.robot.commands.CartesianDrive;
+import frc.robot.commands.curvatureDriveCommand;
 
 /**
  * Add your docs here.
@@ -62,6 +63,14 @@ public class Drivetrain extends Subsystem {
     mPIDRight.setI(kI);
     mPIDLeft.setD(kD);
     mPIDRight.setD(kD);
+
+    mMasterLeft.setSmartCurrentLimit(12);
+    mMasterRight.setSmartCurrentLimit(12);
+    mLeftSlaveA.setSmartCurrentLimit(12);
+    mRightSlaveA.setSmartCurrentLimit(12);
+
+    mMasterLeft.setOpenLoopRampRate(0.25);
+    mMasterRight.setOpenLoopRampRate(0.25);
   }
 
  /**
@@ -76,8 +85,10 @@ public class Drivetrain extends Subsystem {
   }
 
 
-  public void cartesianDrive(double x, double y)
+  public void cartesianDrive(double y, double x)
   {
+    y = Constants.applyDeadband(y,0.12);
+    x = Constants.applyDeadband(x, 0.05);
     double tempX = (Constants.kDriveSensFactor*Math.pow(x,3)) + ((1 - Constants.kDriveSensFactor)*x);
     double tempY = (Constants.kDriveSensFactor*Math.pow(y,3)) + ((1 - Constants.kDriveSensFactor)*y);
 
@@ -86,18 +97,17 @@ public class Drivetrain extends Subsystem {
 
     System.out.println("X:" + powerLeft);
     System.out.println("Y:" + y);
-    mPIDLeft.setReference(tempY, ControlType.kDutyCycle);
-    mPIDRight.setReference(tempY, ControlType.kDutyCycle);
+    mPIDLeft.setReference(Constants.clamp(powerLeft, -1, 1) , ControlType.kDutyCycle);
+    mPIDRight.setReference(Constants.clamp(powerRight,-1,1), ControlType.kDutyCycle);
   }
 
   public void curvatureDrive(double xSpeed, double y, boolean isQuickTurn)
   {
     boolean overPower = false;
-    double throttle;
-    double angularPow;
-    xSpeed = Constants.applyDeadband(xSpeed, Constants.kDriveDeadBand);
+    double angularPow =0;
+    xSpeed = Constants.applyDeadband(xSpeed, 0.12);
     y = Constants.applyDeadband(y, Constants.kDriveDeadBand);
-
+    System.out.println(xSpeed);
     if(isQuickTurn)
     {
        if(Math.abs(xSpeed) < 0.2)
@@ -110,6 +120,7 @@ public class Drivetrain extends Subsystem {
     {
       overPower = false;
       angularPow = Math.abs(xSpeed) * y - m_quickStopAccumulator;
+      System.out.println("APow:"+m_quickStopAccumulator);
 
       if(m_quickStopAccumulator > 1)
       {
@@ -125,8 +136,8 @@ public class Drivetrain extends Subsystem {
       
     }
 
-    double leftPow = xSpeed + angularPow;
-    double rightPow = xSpeed - angularPow;
+    double leftPow = xSpeed - angularPow;
+    double rightPow = xSpeed + angularPow;
 
     if (overPower) {
       if (leftPow > 1.0) {
@@ -143,10 +154,12 @@ public class Drivetrain extends Subsystem {
         rightPow = -1.0;
       }
 
-    mPIDLeft.setReference(leftPow, ControlType.kDutyCycle);
-    mPIDRight.setReference(rightPow, ControlType.kDutyCycle);
+
+    //System.out.println("L:"+ leftPow);
   }
 
+  mPIDLeft.setReference(leftPow, ControlType.kDutyCycle);
+  mPIDRight.setReference(rightPow, ControlType.kDutyCycle);
   }
   @Override
   public void initDefaultCommand() {

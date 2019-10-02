@@ -11,6 +11,7 @@ import com.revrobotics.CANEncoder;
 import com.revrobotics.CANPIDController;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.ControlType;
+import com.revrobotics.CANPIDController.AccelStrategy;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.wpilibj.DriverStation.MatchType;
@@ -19,6 +20,7 @@ import frc.robot.RobotMap;
 import frc.robot.Utils.Constants;
 import frc.robot.commands.CartesianDrive;
 import frc.robot.commands.curvatureDriveCommand;
+import jdk.dynalink.linker.ConversionComparator;
 
 /**
  * Add your docs here.
@@ -44,7 +46,9 @@ public class Drivetrain extends Subsystem {
   private CANPIDController mPIDRight = new CANPIDController(mMasterRight);
   private CANEncoder mEncoderLeft = new CANEncoder(mMasterLeft);
   private CANEncoder mEncoderRight = new CANEncoder(mMasterRight);
-  public double kP,kD,kI;
+  public double kP,kD,kI,maxVel, maxAcc,kFF,kMaxOutput, kMinOutput, kIz, maxRPM;
+  private double displacement;
+  private double velConversionFactor = (((((1/60D)/9.74D))*WHEEL_CIRCUMFERENCE)/39.37);
   private static Drivetrain instance;
 
   private Drivetrain()
@@ -54,23 +58,52 @@ public class Drivetrain extends Subsystem {
 
     mMasterRight.setInverted(true);
     mRightSlaveA.setInverted(true);
-    kP = 0.07;
-    kI = 0.0;
-    kD = 0.05;
+    kP = 0.05;
+    kI = .0;
+    kD = 1;
+    kIz = 0;
+    kFF = 0.00000999;
+    maxRPM = 700;
+    maxVel = 10000;
+    maxAcc = 500;
+    kMaxOutput = 1;
+    kMinOutput = -1;
     mPIDLeft.setP(kP);
     mPIDRight.setP(kP);
     mPIDLeft.setI(kI);
     mPIDRight.setI(kI);
     mPIDLeft.setD(kD);
     mPIDRight.setD(kD);
+    mPIDLeft.setFF(kFF);
+    mPIDRight.setFF(kFF);
+    mPIDLeft.setIZone(kIz);
+    mPIDRight.setIZone(kIz);
+    int smartMotionSlot = 0;
+    mPIDLeft.setSmartMotionMaxAccel(maxAcc, smartMotionSlot);
+    mPIDRight.setSmartMotionMaxAccel(maxAcc, smartMotionSlot);
+    mPIDLeft.setSmartMotionMaxVelocity(maxVel, smartMotionSlot);
+    mPIDRight.setSmartMotionMaxVelocity(maxVel, smartMotionSlot);
+    mPIDLeft.setOutputRange(-1, 1);
+    mPIDRight.setOutputRange(-1, 1);
 
     mMasterLeft.setSmartCurrentLimit(12);
     mMasterRight.setSmartCurrentLimit(12);
     mLeftSlaveA.setSmartCurrentLimit(12);
     mRightSlaveA.setSmartCurrentLimit(12);
 
+    mPIDLeft.setSmartMotionAccelStrategy(AccelStrategy.kTrapezoidal, 0);
+    mPIDRight.setSmartMotionAccelStrategy(AccelStrategy.kTrapezoidal, 0);
+    //mPIDLeft.setSmartMotionMinOutputVelocity(minVel, 0);
+    //mPIDRight.setSmartMotionMinOutputVelocity(minVel, 0);
     mMasterLeft.setOpenLoopRampRate(0.25);
     mMasterRight.setOpenLoopRampRate(0.25);
+
+    mEncoderLeft.setPositionConversionFactor(velConversionFactor);
+    mEncoderRight.setPositionConversionFactor(velConversionFactor);
+    mEncoderLeft.setVelocityConversionFactor(velConversionFactor);
+    mEncoderRight.setVelocityConversionFactor(velConversionFactor);
+    //mMasterLeft.setClosedLoopRampRate(0.5);
+    //mMasterRight.setClosedLoopRampRate(0.5);
   }
 
  /**
@@ -173,8 +206,39 @@ public class Drivetrain extends Subsystem {
     mEncoderRight.setPosition(0);
   }
   public void testAutonomous () {
-    mPIDLeft.setReference(-24/INCHES_PER_REV, ControlType.kPosition);
-    mPIDRight.setReference(-24/INCHES_PER_REV, ControlType.kPosition);
+    double feet = 12/INCHES_PER_REV;
+    displacement = (mEncoderLeft.getPosition() + mEncoderRight.getPosition())/2;
+    System.out.println(mEncoderLeft.getVelocity());
+    //System.out.println(displacement);
+    if(displacement < 4)
+    {
+      mPIDLeft.setReference(-1, ControlType.kVelocity);
+      mPIDRight.setReference(-1, ControlType.kVelocity);
+ 
+      System.out.println("here2");
+    }else {
+      mPIDRight.setReference(0.00000000,ControlType.kVelocity);
+      mPIDLeft.setReference(0.000000000,ControlType.kVelocity);
+      
+    }
+    //mPIDLeft.setReference(1, ControlType.kSmartVelocity);
+    //mPIDRight.setReference(1, ControlType.kSmartVelocity);
+    //mPIDLeft.setReference(feet * 2, ControlType.kPosition);
+    //mPIDRight.setReference(feet * 2, ControlType.kPosition);
+  }
+
+  public void runMotors()
+  {
+    //System.out.println(mEncoderLeft.getVelocity());
+    setVelocity(5440/2, 5440/2);
+  }
+
+  public void setVelocity(double left, double right)
+  {
+    double kVelocity = (1/557D);
+    System.out.println(mEncoderLeft.getVelocity());
+    mPIDLeft.setReference(1,ControlType.kDutyCycle);
+    mPIDRight.setReference(1,ControlType.kDutyCycle);
   }
 
   

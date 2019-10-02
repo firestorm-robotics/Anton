@@ -20,6 +20,7 @@ import frc.robot.RobotMap;
 import frc.robot.Utils.Constants;
 import frc.robot.commands.CartesianDrive;
 import frc.robot.commands.curvatureDriveCommand;
+import jdk.dynalink.linker.ConversionComparator;
 
 /**
  * Add your docs here.
@@ -47,6 +48,7 @@ public class Drivetrain extends Subsystem {
   private CANEncoder mEncoderRight = new CANEncoder(mMasterRight);
   public double kP,kD,kI,maxVel, maxAcc,kFF,kMaxOutput, kMinOutput, kIz, maxRPM;
   private double displacement;
+  private double velConversionFactor = (((((1/60D)/9.74D))*WHEEL_CIRCUMFERENCE)/39.37);
   private static Drivetrain instance;
 
   private Drivetrain()
@@ -56,9 +58,9 @@ public class Drivetrain extends Subsystem {
 
     mMasterRight.setInverted(true);
     mRightSlaveA.setInverted(true);
-    kP = .005;
-    kI = .0000096;
-    kD = .0005;
+    kP = 0.05;
+    kI = .0;
+    kD = 1;
     kIz = 0;
     kFF = 0.00000999;
     maxRPM = 700;
@@ -96,6 +98,10 @@ public class Drivetrain extends Subsystem {
     mMasterLeft.setOpenLoopRampRate(0.25);
     mMasterRight.setOpenLoopRampRate(0.25);
 
+    mEncoderLeft.setPositionConversionFactor(velConversionFactor);
+    mEncoderRight.setPositionConversionFactor(velConversionFactor);
+    mEncoderLeft.setVelocityConversionFactor(velConversionFactor);
+    mEncoderRight.setVelocityConversionFactor(velConversionFactor);
     //mMasterLeft.setClosedLoopRampRate(0.5);
     //mMasterRight.setClosedLoopRampRate(0.5);
   }
@@ -192,7 +198,7 @@ public class Drivetrain extends Subsystem {
   public void initDefaultCommand() {
     // Set the default command for a subsystem here.
     // setDefaultCommand(new MySpecialCommand());
-    setDefaultCommand(new curvatureDriveCommand());
+    setDefaultCommand(new CartesianDrive());
   }
   public void resetEncoders()
   {
@@ -201,24 +207,38 @@ public class Drivetrain extends Subsystem {
   }
   public void testAutonomous () {
     double feet = 12/INCHES_PER_REV;
-    //get displacement
-    displacement = (Math.abs(mEncoderLeft.getPosition()+Math.abs(mEncoderRight.getPosition()))/2);
-    double velocity = (Math.abs(mEncoderLeft.getVelocity()+Math.abs(mEncoderRight.getVelocity()))/2);
-    System.out.println("Displacement: "+displacement+" Velocity: "+velocity);
-    if(displacement < 10)
+    displacement = (mEncoderLeft.getPosition() + mEncoderRight.getPosition())/2;
+    System.out.println(mEncoderLeft.getVelocity());
+    //System.out.println(displacement);
+    if(displacement < 4)
     {
-      setVelocity(0.03, 0.03);
-      System.out.println("Stopping");
-    }else
-    {
-      setVelocity(0,0);
+      mPIDLeft.setReference(-1, ControlType.kVelocity);
+      mPIDRight.setReference(-1, ControlType.kVelocity);
+ 
+      System.out.println("here2");
+    }else {
+      mPIDRight.setReference(0.00000000,ControlType.kVelocity);
+      mPIDLeft.setReference(0.000000000,ControlType.kVelocity);
+      
     }
+    //mPIDLeft.setReference(1, ControlType.kSmartVelocity);
+    //mPIDRight.setReference(1, ControlType.kSmartVelocity);
+    //mPIDLeft.setReference(feet * 2, ControlType.kPosition);
+    //mPIDRight.setReference(feet * 2, ControlType.kPosition);
   }
 
-  private void setVelocity(double left, double right)
+  public void runMotors()
   {
-    mPIDLeft.setReference(left,ControlType.kVelocity);
-    mPIDRight.setReference(right,ControlType.kVelocity);
+    //System.out.println(mEncoderLeft.getVelocity());
+    setVelocity(5440/2, 5440/2);
+  }
+
+  public void setVelocity(double left, double right)
+  {
+    double kVelocity = (1/557D);
+    System.out.println(mEncoderLeft.getVelocity());
+    mPIDLeft.setReference(1,ControlType.kDutyCycle);
+    mPIDRight.setReference(1,ControlType.kDutyCycle);
   }
 
   

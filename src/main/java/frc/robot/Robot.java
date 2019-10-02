@@ -105,7 +105,7 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousPeriodic() {
     //Scheduler.getInstance().run();
-    mDrivetrain.testAutonomous();
+    mDrivetrain.runMotors();
   }
 
   @Override
